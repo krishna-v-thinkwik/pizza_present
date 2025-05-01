@@ -18,7 +18,7 @@ sheet = client.open("menu").worksheet("pizza menu")
 data = sheet.get_all_records()
 
 # Load toppings sheet
-topping_sheet = client.open("menu").worksheet("toppings")
+topping_sheet = client.open("menu").worksheet("pizza menu")
 topping_records = topping_sheet.get_all_records()
 
 @app.route('/')
