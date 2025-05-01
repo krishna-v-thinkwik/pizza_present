@@ -1,8 +1,8 @@
+import os
 from flask import Flask, request
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-import os
 import re
 
 app = Flask(__name__)
@@ -40,7 +40,6 @@ def check_order():
     crusts = [singularize(c.strip()) for c in (crusts_raw.split(" and ") if " and " in crusts_raw else [crusts_raw])]
     toppings_input = [singularize(t.strip()) for t in (toppings_raw.split(" and ") if " and " in toppings_raw else [toppings_raw])]
 
-    # Fetch all toppings from the menu
     topping_column = "Toppings veg" if pizza_type == "veg" else "Toppings non veg"
     all_toppings = set()
     for row in data:
@@ -48,11 +47,9 @@ def check_order():
             toppings = [singularize(t) for t in row[topping_column].split(",") if t.strip()]
             all_toppings.update(toppings)
 
-    # Exact topping matching
     valid_toppings = [t for t in toppings_input if t in all_toppings]
     invalid_toppings = [t for t in toppings_input if t not in all_toppings]
 
-    # Start building the response
     response = []
     all_available = True
 
@@ -88,11 +85,9 @@ def check_order():
             all_available = False
             continue
 
-    # Final overall availability
     if all_available:
         response.append("The items you ordered are available in our menu.")
 
-    # Toppings summary
     if invalid_toppings:
         response.append(
             f"Toppings not available: {', '.join(invalid_toppings)}. But we do have these available: {', '.join(sorted(all_toppings))}."
@@ -103,4 +98,5 @@ def check_order():
     return "\n".join(response)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get("PORT", 10000))  # Use Render-assigned PORT
+    app.run(host='0.0.0.0', port=port)
