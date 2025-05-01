@@ -27,7 +27,6 @@ def check_order():
     sizes_raw = input_data.get("PizzaSize", "").lower().strip()
     crusts_raw = input_data.get("PizzaCrust", "").lower().strip()
     toppings_raw = input_data.get("PizzaToppings", "").lower().strip()
-    pizza_type = input_data.get("PizzaType", "").lower().strip()
 
     def singularize(word):
         word = word.strip().lower()
@@ -40,11 +39,10 @@ def check_order():
     crusts = [singularize(c.strip()) for c in (crusts_raw.split(" and ") if " and " in crusts_raw else [crusts_raw])]
     toppings_input = [singularize(t.strip()) for t in (toppings_raw.split(" and ") if " and " in toppings_raw else [toppings_raw])]
 
-    topping_column = "Toppings veg" if pizza_type == "veg" else "Toppings non veg"
     all_toppings = set()
     for row in data:
-        if topping_column in row and row[topping_column]:
-            toppings = [singularize(t) for t in row[topping_column].split(",") if t.strip()]
+        if "Toppings" in row and row["Toppings"]:
+            toppings = [singularize(t) for t in row["Toppings"].split(",") if t.strip()]
             all_toppings.update(toppings)
 
     valid_toppings = [t for t in toppings_input if t in all_toppings]
@@ -59,13 +57,11 @@ def check_order():
 
         matched_items = [
             row for row in data
-            if 'Name' in row and 'Type' in row and
-               singularize(row['Name'].strip().lower()) == name and
-               row['Type'].strip().lower() == pizza_type
+            if 'Name' in row and singularize(row['Name'].strip().lower()) == name
         ]
 
         if not matched_items:
-            available_pizzas = sorted(set(row['Name'] for row in data if row['Type'].strip().lower() == pizza_type))
+            available_pizzas = sorted(set(row['Name'] for row in data))
             response.append(
                 f"Sorry! we do not have {name.title()} pizza in our menu. However, here are some pizzas you can choose from: {', '.join(available_pizzas)}."
             )
@@ -103,5 +99,5 @@ def check_order():
     return "\n".join(response)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))  # Use Render-assigned PORT
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
