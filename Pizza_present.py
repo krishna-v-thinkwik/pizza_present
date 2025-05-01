@@ -57,7 +57,12 @@ def check_order():
         size = sizes[idx] if idx < len(sizes) else sizes[0] if sizes else ""
         crust = crusts[idx] if idx < len(crusts) else crusts[0] if crusts else ""
 
-        matched_items = [row for row in data if singularize(row['Name']) == name and row['Type'].strip().lower() == pizza_type]
+        matched_items = [
+            row for row in data
+            if 'Name' in row and 'Type' in row and
+               singularize(row['Name'].strip().lower()) == name and
+               row['Type'].strip().lower() == pizza_type
+        ]
 
         if not matched_items:
             available_pizzas = sorted(set(row['Name'] for row in data if row['Type'].strip().lower() == pizza_type))
