@@ -12,8 +12,14 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 service_account_info = json.loads(os.environ["GOOGLE_CREDS_JSON"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
+
+# Load main pizza menu
 sheet = client.open("menu").worksheet("pizza menu")
 data = sheet.get_all_records()
+
+# Load toppings sheet
+topping_sheet = client.open("menu").worksheet("toppings")
+topping_records = topping_sheet.get_all_records()
 
 @app.route('/')
 def home():
@@ -32,6 +38,7 @@ def check_order():
         word = word.strip().lower()
         return word[:-1] if word.endswith('s') and not word.endswith('ss') else word
 
+    # Parse and normalize pizza orders
     pizza_orders = re.findall(r'(\d+)\s+([a-zA-Z ]+?)(?=\s*(?:and|$))', names_raw)
     pizza_orders = [(qty, singularize(name)) for qty, name in pizza_orders]
 
@@ -39,12 +46,14 @@ def check_order():
     crusts = [singularize(c.strip()) for c in (crusts_raw.split(" and ") if " and " in crusts_raw else [crusts_raw])]
     toppings_input = [singularize(t.strip()) for t in (toppings_raw.split(" and ") if " and " in toppings_raw else [toppings_raw])]
 
-    all_toppings = set()
-    for row in data:
+    # Build a normalized toppings map from toppings sheet
+    topping_map = {}
+    for row in topping_records:
         if "Toppings" in row and row["Toppings"]:
-            toppings = [singularize(t) for t in row["Toppings"].split(",") if t.strip()]
-            all_toppings.update(toppings)
+            normalized = singularize(row["Toppings"])
+            topping_map[normalized] = row["Toppings"]
 
+    all_toppings = set(topping_map.keys())
     valid_toppings = [t for t in toppings_input if t in all_toppings]
     invalid_toppings = [t for t in toppings_input if t not in all_toppings]
 
@@ -91,10 +100,10 @@ def check_order():
 
     if invalid_toppings:
         response.append(
-            f"Toppings not available: {', '.join(invalid_toppings)}. But we do have these available: {', '.join(sorted(all_toppings))}."
+            f"Toppings not available: {', '.join(invalid_toppings)}. But we do have these available: {', '.join(sorted(topping_map.values()))}."
         )
     elif valid_toppings:
-        response.append(f"Toppings available: {', '.join(sorted(set(valid_toppings)))}.")
+        response.append(f"Toppings available: {', '.join(sorted(set(topping_map[t] for t in valid_toppings)))}.")
 
     return "\n".join(response)
 
